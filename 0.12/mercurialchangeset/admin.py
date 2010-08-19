@@ -212,10 +212,10 @@ class MercurialChangesetAdmin(Component):
 			description = ctx.description()
 			time = ctx.date()[0]
 			author = ctx.user()
-			self.log.debug("Inserting revision %s" % rev + ":" + rev_hash)
+			#self.log.debug("Inserting revision %s" % rev + ":" + rev_hash)
 			self.insert_revision(self.repository_id, rev, rev_hash, time, author, description)	   
-		else:
-			self.log.debug("Revision %s already present in Trac" % rev + ":" + rev_hash)
+		#else:
+			#self.log.debug("Revision %s already present in Trac" % rev + ":" + rev_hash)
 
 	def sync_last_revision(self, repository):
 		"""
