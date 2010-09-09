@@ -233,7 +233,7 @@ class MercurialChangesetAdmin(Component):
 		self.initialize_repository(repository)
 
 		for change in self.repository.changelog:
-			self.sync_revision(change.real)
+			self.sync_revision(int(change))
 
 	def sync_after_revision(self, revision, repository):
 		"""
