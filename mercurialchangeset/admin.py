@@ -22,6 +22,7 @@ from trac.util.text import printout
 from mercurial import ui, hg, context
 from mercurial.node import short
 import sys, re, os
+import locale
 
 class MercurialChangesetAdmin(Component):
     """trac-admin command provider for mercurialchangesets plugin"""
@@ -32,6 +33,7 @@ class MercurialChangesetAdmin(Component):
         # Trac's Database connection
         self.db = self.env.get_db_cnx()
         self.cursor = self.db.cursor()
+        self.hg_encoding = locale.getpreferredencoding() or 'UTF-8' # XXX parameter needs
 
     # IAdminCommandProvider methods
     # ---------------------------------------
@@ -205,15 +207,15 @@ class MercurialChangesetAdmin(Component):
         # Let's get its change context object from the repository
         ctx = self.repository.changectx(node)
         rev = str(ctx.rev())
-        rev_hash = short(ctx.node())    
-        
+        rev_hash = short(ctx.node())
+
         # If revision is not already in Trac's revision table, insert it
         if not(self.check_revision(rev, rev_hash)):
-            description = ctx.description()
+            description = ctx.description().decode(self.hg_encoding)
             time = ctx.date()[0]
-            author = ctx.user()
+            author = ctx.user().decode(self.hg_encoding)
             #self.log.debug("Inserting revision %s" % rev + ":" + rev_hash)
-            self.insert_revision(self.repository_id, rev, rev_hash, time, author, description)     
+            self.insert_revision(self.repository_id, rev, rev_hash, time, author, description)
         #else:
             #self.log.debug("Revision %s already present in Trac" % rev + ":" + rev_hash)
 
