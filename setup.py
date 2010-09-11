@@ -21,36 +21,36 @@ from setuptools import find_packages, setup
 extra = {}
 
 setup(
-	name = 'TracMercurialChangesetPlugin',
-	version = "0.1",
-	description = "Insert Mercurial's changesets into Trac's DB revision table",
-	author = "Miguel Araujo Perez, J. Javier Maestro de la Calle",
-	author_email = "miguel.araujo.perez@gmail.com",
-	url = "http://github.com/maraujop/TracMercurialChangesetPlugin",
-	license = "GPL",
-	packages = find_packages(exclude=['tests*']),
-	include_package_data = True,
+    name = 'TracMercurialChangesetPlugin',
+    version = "0.1",
+    description = "Insert Mercurial's changesets into Trac's DB revision table",
+    author = "Miguel Araujo Perez, J. Javier Maestro de la Calle",
+    author_email = "miguel.araujo.perez@gmail.com",
+    url = "http://github.com/maraujop/TracMercurialChangesetPlugin",
+    license = "GPL",
+    packages = find_packages(exclude=['tests*']),
+    include_package_data = True,
 
-	package_data = { 'mercurialchangeset': [ 
-		'*.txt'
-		],
-	},
+    package_data = { 'mercurialchangeset': [ 
+        '*.txt'
+        ],
+    },
 
-	zip_safe = True,
+    zip_safe = True,
 
-	keywords = "trac ticket plugin mercurial hg changeset integration",
+    keywords = "trac ticket plugin mercurial hg changeset integration",
 
-	classifiers = [
-		'Framework :: Trac',
-	],
+    classifiers = [
+        'Framework :: Trac',
+    ],
 
-	install_requires = [],
+    install_requires = [],
 
-	entry_points = """
-		[trac.plugins]
-		mercurialchangeset.admin = mercurialchangeset.admin
-	""",
+    entry_points = """
+        [trac.plugins]
+        mercurialchangeset.admin = mercurialchangeset.admin
+    """,
 
-	**extra
+    **extra
 
-	)
+    )
