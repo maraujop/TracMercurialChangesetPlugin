@@ -154,3 +154,8 @@ You can install this software as a normal Trac plugin.
 	Please activate logging in Trac, so you can send as much information as
 	possible. Please paste the traceback you will find at log/trac.log within
 	your issue. This way it will be easier to fix any error. 
+
+++++++++++++++
+ Contributors
+++++++++++++++
+ - Boris Kocherov (bkcocherov) http://github.com/bkocherov
