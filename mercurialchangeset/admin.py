@@ -212,7 +212,7 @@ class MercurialChangesetAdmin(Component):
         # If revision is not already in Trac's revision table, insert it
         if not(self.check_revision(rev, rev_hash)):
             description = ctx.description().decode(self.hg_encoding)
-            time = ctx.date()[0]
+            time = ctx.date()[0]*1000000
             author = ctx.user().decode(self.hg_encoding)
             #self.log.debug("Inserting revision %s" % rev + ":" + rev_hash)
             self.insert_revision(self.repository_id, rev, rev_hash, time, author, description)
