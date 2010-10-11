@@ -77,7 +77,7 @@ class MercurialChangesetAdmin(Component):
         """
         Returns the repository id inside Trac. This is needed to support
         multi-repository since v0.12. However, in lower versions of Trac, by simply
-        using 'default' as repository name it should work just fine :)
+        using 'default' as repository name, it should work just fine :)
         """
         if (repository == "default"):
             return 1
@@ -86,7 +86,7 @@ class MercurialChangesetAdmin(Component):
         if os.path.isdir(repository):
             # The default repository is not in the repository table
             # We need to check it apart, against the Trac's config file
-            default_repository_path = self.config.get("trac", "repository_dir", False) 
+            default_repository_path = self.config.get("trac", "repository_dir", "") 
             contains = re.compile(repository)
             if contains.match(default_repository_path):
                 return 1

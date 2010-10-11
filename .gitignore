@@ -1,0 +1,4 @@
+*.pyc
+/build
+/dist
+/TracMercurialChangesetPlugin.egg-info
