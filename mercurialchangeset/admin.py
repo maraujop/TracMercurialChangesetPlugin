@@ -33,7 +33,7 @@ class MercurialChangesetAdmin(Component):
         # Trac's Database connection
         self.db = self.env.get_db_cnx()
         self.cursor = self.db.cursor()
-        self.hg_encoding = locale.getpreferredencoding() or 'UTF-8' # XXX parameter needs
+        self.hg_encoding = locale.getpreferredencoding() or 'UTF-8' 
 
     # IAdminCommandProvider methods
     # ---------------------------------------
@@ -71,6 +71,12 @@ class MercurialChangesetAdmin(Component):
                 """,
                 None, self.sync_specific_revision)
 
+        yield ('mercurial syncAll','',
+                """Synchronize all under Trac's control Mercurial repositories into Trac's DB revision table.\n 
+                    Example: mercurial syncAll
+                """,
+                None, self.sync_all_repositories)
+
     # Internal methods
     # ---------------------------------------
     def get_repository_id(self, repository):
@@ -106,7 +112,7 @@ class MercurialChangesetAdmin(Component):
                 printout("[E] Path",repository,"was not found in repository table, neither in Trac's config. Sync will not be executed")
                 sys.exit(0)
 
-        # Otherwise it's the name of the repository
+        # Otherwise it should be the name of the repository
         else:
             sql_string = """
                 SELECT id
@@ -117,35 +123,32 @@ class MercurialChangesetAdmin(Component):
             row = self.cursor.fetchone()
         
             if not row:
-                printout("[E] Sorry, repository name or path not found")
+                printout("[E] Sorry, repository name not found")
                 sys.exit(1)
         
         return row[0]
     
-    def get_mercurial_repository(self, repository, repository_id):
+    def get_mercurial_repository(self, repository_id):
         """
         Returns a Mercurial repository API object pointing at the repository
-        given by the trac-admin parameter
+        given by the trac-admin parameter. 
         """
         try:
-            if (repository == "default"):
+            if (repository_id == 1):
                 repository_dir = self.config.get("trac", "repository_dir", False)
             else:
-                if os.path.isdir(repository):
-                    repository_dir = repository
-                else:
-                    sql_string = """
-                        SELECT value
-                         FROM repository
-                         WHERE name = 'dir' AND id = %s
-                    """
-                    self.cursor.execute(sql_string, (repository_id,))
-                    row = self.cursor.fetchone()
-                    if not row:
-                        printout("[E] Sorry, but repository name is not defined in repository table")
-                        sys.exit(1)
+                sql_string = """
+                    SELECT value
+                     FROM repository
+                     WHERE name = 'dir' AND id = %s
+                """
+                self.cursor.execute(sql_string, (repository_id,))
+                row = self.cursor.fetchone()
+                if not row:
+                    printout("[E] Sorry, but repository name is not defined in repository table")
+                    sys.exit(1)
 
-                    repository_dir = row[0]
+                repository_dir = row[0]
 
             return hg.repository(ui.ui(), repository_dir)
 
@@ -160,9 +163,9 @@ class MercurialChangesetAdmin(Component):
         call this method before performing any action on the repository.
         """
         self.repository_id = self.get_repository_id(repository)
-        self.repository = self.get_mercurial_repository(repository, self.repository_id) 
+        self.repository = self.get_mercurial_repository(self.repository_id) 
 
-    def check_revision(self, rev, rev_hash):
+    def check_revision(self, rev_hash):
         """
         Checks if the revision is already in Trac's revision table. If it exists
         returns True, False otherwise
@@ -170,14 +173,14 @@ class MercurialChangesetAdmin(Component):
         sql_string = """
             SELECT rev, author, time, message
              FROM revision
-             WHERE rev LIKE %s
+             WHERE rev LIKE %s 
         """
-        self.cursor.execute(sql_string, (rev + ":" + rev_hash,))
+        self.cursor.execute(sql_string, (rev_hash,))
         rows = self.cursor.fetchall()
         
         return len(rows) == 1
 
-    def insert_revision(self, repository_id, rev, rev_hash, time, author, description):
+    def insert_revision(self, repository_id, rev_hash, time, author, description):
         """
         Inserts the changeset information into Trac's revision table.
         """
@@ -185,13 +188,8 @@ class MercurialChangesetAdmin(Component):
             INSERT INTO revision (repos, rev, time, author, message)
              VALUES (%s, %s, %s, %s, %s)
         """
-        # We insert only the first line of the commit description (the summary)
-        # TODO: think of having a config flag to choose from saving summary or the
-        # whole commit message
-        eol = re.compile(r'\r?\n')
-        first_line = eol.split(description.strip())[0]
-        
-        self.cursor.execute(sql_string, (repository_id, rev + ":" + rev_hash, time, author, first_line))
+        # We insert the whole commit description for using it within Trac's search
+        self.cursor.execute(sql_string, (repository_id, rev_hash, time, author, description))
         self.db.commit()
     
     def sync_revision(self, revision):
@@ -206,18 +204,17 @@ class MercurialChangesetAdmin(Component):
         node = self.repository.lookup(revision)
         # Let's get its change context object from the repository
         ctx = self.repository.changectx(node)
-        rev = str(ctx.rev())
-        rev_hash = short(ctx.node())
+        rev_hash = ctx.hex() 
 
         # If revision is not already in Trac's revision table, insert it
-        if not(self.check_revision(rev, rev_hash)):
+        if not(self.check_revision(rev_hash)):
             description = ctx.description().decode(self.hg_encoding)
             time = ctx.date()[0]*1000000
             author = ctx.user().decode(self.hg_encoding)
-            #self.log.debug("Inserting revision %s" % rev + ":" + rev_hash)
-            self.insert_revision(self.repository_id, rev, rev_hash, time, author, description)
+            #self.log.debug("Inserting revision %s" % rev_hash)
+            self.insert_revision(self.repository_id, rev_hash, time, author, description)
         #else:
-            #self.log.debug("Revision %s already present in Trac" % rev + ":" + rev_hash)
+            #self.log.debug("Revision %s already present in Trac" % rev_hash)
 
     def sync_last_revision(self, repository):
         """
@@ -261,3 +258,23 @@ class MercurialChangesetAdmin(Component):
         """
         self.initialize_repository(repository)
         self.sync_revision(revision)
+    
+    def sync_all_repositories(self):
+        """
+        Synchronize all under Trac's control Mercurial repositories into Trac's DB
+        revision table. 
+        Iterates over the repository names, calling sync_repository
+        """
+        sql_string = """
+                   SELECT f.value 
+                    FROM repository f, repository s 
+                    WHERE f.name = 'name' AND f.id = s.id AND s.name = 'type' AND s.value = 'hg';
+                 """
+        
+        self.cursor.execute(sql_string)
+        rows = self.cursor.fetchall()
+        # Add default repository, which is not in the repository table
+        rows.append(("default",))
+
+        for repository_name in rows:
+            self.sync_repository(repository_name[0])
