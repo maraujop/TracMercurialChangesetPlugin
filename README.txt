@@ -17,7 +17,7 @@
 #  GNU GPL v3: http://www.gnu.org/copyleft/gpl-3.0.html
 
 ++++++++++++++++++++++++++++
-MercurialChangesetPlugin 0.1
+MercurialChangesetPlugin 0.3
 ++++++++++++++++++++++++++++
 
 +++++++++++++++++++++
@@ -128,6 +128,10 @@ You can install this software as a normal Trac plugin.
 
  4. trac-admin /srv/trac/env/ mercurial revision <revision> <repository>
 	Synchronize the given revision from Mercurial's repository into Trac's DB
+	revision table.
+
+ 5. trac-admin /srv/trac/env/ mercurial syncAll
+	Synchronize all hg repositories under Trac's control into Trac's DB
 	revision table.
 
 	<revision> can be a revision number or a revision hash
