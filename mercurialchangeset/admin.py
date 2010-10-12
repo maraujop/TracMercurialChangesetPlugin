@@ -173,9 +173,9 @@ class MercurialChangesetAdmin(Component):
         sql_string = """
             SELECT rev, author, time, message
              FROM revision
-             WHERE rev LIKE %s 
+             WHERE repos LIKE %s AND rev LIKE %s 
         """
-        self.cursor.execute(sql_string, (rev_hash,))
+        self.cursor.execute(sql_string, (self.repository_id, rev_hash,))
         rows = self.cursor.fetchall()
         
         return len(rows) == 1
