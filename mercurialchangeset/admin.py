@@ -34,6 +34,7 @@ class MercurialChangesetAdmin(Component):
         self.db = self.env.get_db_cnx()
         self.cursor = self.db.cursor()
         self.hg_encoding = locale.getpreferredencoding() or 'UTF-8' 
+        self.default = False
 
     # IAdminCommandProvider methods
     # ---------------------------------------
@@ -85,8 +86,19 @@ class MercurialChangesetAdmin(Component):
         multi-repository since v0.12. However, in lower versions of Trac, by simply
         using 'default' as repository name, it should work just fine :)
         """
+        # The default repository is the one that has no "name" value in repository table
         if (repository == "default"):
-            return 1
+            sql_string = """
+                SELECT id
+                 FROM repository 
+                 WHERE name = 'name' AND value = '';
+            """
+            self.cursor.execute(sql_string)
+            row = self.cursor.fetchone()
+            # Default is an special situation, we need to handle different
+            # Default dir could be specified in repository table or in trac.ini
+            self.default = True
+            return row[0]
 
         # The repository can be a path to the root of the repository
         if os.path.isdir(repository):
@@ -134,9 +146,13 @@ class MercurialChangesetAdmin(Component):
         given by the trac-admin parameter. 
         """
         try:
-            if (repository_id == 1):
+            repository_dir = None
+            if (self.default):
                 repository_dir = self.config.get("trac", "repository_dir", False)
-            else:
+
+            # If repository is "default" but the dir is not in config then
+            # repository_dir will be False, so we look in repository table
+            if not self.default or repository_dir is False:
                 sql_string = """
                     SELECT value
                      FROM repository
@@ -152,8 +168,9 @@ class MercurialChangesetAdmin(Component):
 
             return hg.repository(ui.ui(), repository_dir)
 
-        except repo.RepoError:
-            printout("[E] Impossible to connect to Mercurial repository at", repository_dir)
+        except Exception, error:
+            printout("Error:", error)
+            printout("Error: Impossible to connect to Mercurial repository at", repository_dir)
             sys.exit(1)
 
     def initialize_repository(self, repository):
