@@ -107,6 +107,7 @@ class MercurialChangesetAdmin(Component):
             default_repository_path = self.config.get("trac", "repository_dir", "") 
             contains = re.compile(repository)
             if contains.match(default_repository_path):
+                self.default = True
                 return 1
 
             sql_string = """
