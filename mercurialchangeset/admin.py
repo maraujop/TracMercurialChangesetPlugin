@@ -193,7 +193,7 @@ class MercurialChangesetAdmin(Component):
         description = ctx.description().decode(self.hg_encoding)
         time = ctx.date()[0]*1000000
         author = ctx.user().decode(self.hg_encoding)
-        return (self.repository_id, rev_hash, time, author, description)
+        return (self.repository_id, hex(node), time, author, description)
 
     def check_revision(self, rev_hash):
         """
