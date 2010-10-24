@@ -20,7 +20,7 @@ from trac.admin import IAdminCommandProvider
 from trac.core import *
 from trac.util.text import printout
 from mercurial import ui, hg, context
-from mercurial.node import short
+from mercurial.node import short, hex, bin
 import sys, re, os
 import locale
 
@@ -183,6 +183,18 @@ class MercurialChangesetAdmin(Component):
         self.repository_id = self.get_repository_id(repository)
         self.repository = self.get_mercurial_repository(self.repository_id) 
 
+    def _get_ctx_from_repo(self, node):
+        """
+        Recives binary bin(rev_hash) or node.
+        Return list changeset data for commit in sql table
+        """
+        # Let's get its change context object from the repository
+        ctx = self.repository.changectx(node)
+        description = ctx.description().decode(self.hg_encoding)
+        time = ctx.date()[0]*1000000
+        author = ctx.user().decode(self.hg_encoding)
+        return (self.repository_id, rev_hash, time, author, description)
+
     def check_revision(self, rev_hash):
         """
         Checks if the revision is already in Trac's revision table. If it exists
@@ -191,7 +203,7 @@ class MercurialChangesetAdmin(Component):
         sql_string = """
             SELECT rev, author, time, message
              FROM revision
-             WHERE repos LIKE %s AND rev LIKE %s 
+             WHERE repos = %s AND rev = %s 
         """
         self.cursor.execute(sql_string, (self.repository_id, rev_hash,))
         rows = self.cursor.fetchall()
@@ -220,17 +232,12 @@ class MercurialChangesetAdmin(Component):
         """
         # Let's get Mercurial commit information
         node = self.repository.lookup(revision)
-        # Let's get its change context object from the repository
-        ctx = self.repository.changectx(node)
-        rev_hash = ctx.hex() 
+        rev_hash = hex(node)
 
         # If revision is not already in Trac's revision table, insert it
         if not(self.check_revision(rev_hash)):
-            description = ctx.description().decode(self.hg_encoding)
-            time = ctx.date()[0]*1000000
-            author = ctx.user().decode(self.hg_encoding)
             #self.log.debug("Inserting revision %s" % rev_hash)
-            self.insert_revision(self.repository_id, rev_hash, time, author, description)
+            self.insert_revision(*(self._get_ctx_from_repo(node)))
         #else:
             #self.log.debug("Revision %s already present in Trac" % rev_hash)
 
@@ -248,9 +255,27 @@ class MercurialChangesetAdmin(Component):
         revision table. 
         """
         self.initialize_repository(repository)
+        
+        repo_nodes = set([ hex(self.repository.changelog.node(rev)) for rev in self.repository.changelog ])
+        self.cursor.execute("SELECT rev FROM revision WHERE repos = %s", (self.repository_id, ))
+        sql_nodes = set([ i[0] for i in self.cursor.fetchall() ])
 
-        for change in self.repository.changelog:
-            self.sync_revision(int(change))
+        add_nodes = [ self._get_ctx_from_repo(bin(i)) for i in repo_nodes - sql_nodes ]
+        del_nodes = [ (self.repository_id, i) for i in sql_nodes - repo_nodes ]
+
+        sql_string = """
+             INSERT INTO revision (repos, rev, time, author, message)
+             VALUES (%s, %s, %s, %s, %s)
+        """
+        # XXX trac.db.utils.executemany need fix args whould be iterator not list
+        # use list in this place slow
+        self.cursor.executemany(sql_string, list(add_nodes))
+        self.db.commit()
+
+        # XXX trac.db.utils.executemany need fix args whould be iterator not list
+        # use list in this place slow
+        self.cursor.executemany("DELETE FROM revision WHERE repos = %s AND rev = %s", list(del_nodes))
+        self.db.commit()
 
     def sync_after_revision(self, revision, repository):
         """
