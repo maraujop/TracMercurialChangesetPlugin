@@ -16,13 +16,14 @@
 #  GNU GPL v2: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 #  GNU GPL v3: http://www.gnu.org/copyleft/gpl-3.0.html
 
+import sys, re, os
+import locale
+
 from trac.admin import IAdminCommandProvider
 from trac.core import *
 from trac.util.text import printout
 from mercurial import ui, hg, context
 from mercurial.node import short, hex, bin
-import sys, re, os
-import locale
 
 class MercurialChangesetAdmin(Component):
     """trac-admin command provider for mercurialchangesets plugin"""
@@ -257,9 +258,13 @@ class MercurialChangesetAdmin(Component):
         self.initialize_repository(repository)
         
         repo_nodes = set([ hex(self.repository.changelog.node(rev)) for rev in self.repository.changelog ])
-        self.cursor.execute("SELECT rev FROM revision WHERE repos = %s", (self.repository_id, ))
+        
+        sql_string = """
+             SELECT rev FROM revision WHERE repos = %s
+        """
+        self.cursor.execute(sql_string, (self.repository_id, ))
         sql_nodes = set([ i[0] for i in self.cursor.fetchall() ])
-
+        
         add_nodes = [ self._get_ctx_from_repo(bin(i)) for i in repo_nodes - sql_nodes ]
         del_nodes = [ (self.repository_id, i) for i in sql_nodes - repo_nodes ]
 
@@ -267,14 +272,16 @@ class MercurialChangesetAdmin(Component):
              INSERT INTO revision (repos, rev, time, author, message)
              VALUES (%s, %s, %s, %s, %s)
         """
-        # XXX trac.db.utils.executemany need fix args whould be iterator not list
-        # use list in this place slow
+        # trac.db.utils.executemany can not be passed an iterator 
+        # Constructing a list here slow things, but it is necessary
         self.cursor.executemany(sql_string, list(add_nodes))
         self.db.commit()
 
-        # XXX trac.db.utils.executemany need fix args whould be iterator not list
-        # use list in this place slow
-        self.cursor.executemany("DELETE FROM revision WHERE repos = %s AND rev = %s", list(del_nodes))
+        sql_string = """
+            DELETE FROM revision 
+            WHERE repos = %s AND rev = %s
+        """
+        self.cursor.executemany(sql_string, list(del_nodes))
         self.db.commit()
 
     def sync_after_revision(self, revision, repository):
