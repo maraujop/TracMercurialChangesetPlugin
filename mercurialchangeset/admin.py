@@ -257,14 +257,19 @@ class MercurialChangesetAdmin(Component):
         """
         self.initialize_repository(repository)
         
+        # repo_nodes: All nodes in the repository changelog
         repo_nodes = set([ hex(self.repository.changelog.node(rev)) for rev in self.repository.changelog ])
         
+        # sql_nodes: All nodes already synced in revision the table
         sql_string = """
-             SELECT rev FROM revision WHERE repos = %s
+             SELECT rev FROM revision 
+             WHERE repos = %s
         """
         self.cursor.execute(sql_string, (self.repository_id, ))
         sql_nodes = set([ i[0] for i in self.cursor.fetchall() ])
         
+        # add_nodes: New nodes to be synced 
+        # del_nodes: There might be nodes synced that are outdated 
         add_nodes = [ self._get_ctx_from_repo(bin(i)) for i in repo_nodes - sql_nodes ]
         del_nodes = [ (self.repository_id, i) for i in sql_nodes - repo_nodes ]
 
@@ -272,8 +277,9 @@ class MercurialChangesetAdmin(Component):
              INSERT INTO revision (repos, rev, time, author, message)
              VALUES (%s, %s, %s, %s, %s)
         """
+        # We insert the new nodes information into Trac's revision table
         # trac.db.utils.executemany can not be passed an iterator 
-        # Constructing a list here slow things, but it is necessary
+        # Constructing a list here slow things down, but it is the only way at the moment
         self.cursor.executemany(sql_string, list(add_nodes))
         self.db.commit()
 
