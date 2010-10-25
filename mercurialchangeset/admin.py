@@ -96,7 +96,7 @@ class MercurialChangesetAdmin(Component):
             """
             self.cursor.execute(sql_string)
             row = self.cursor.fetchone()
-            # Default is an special situation, we need to handle different
+            # Default is an special situation, we need to handle it different
             # Default dir could be specified in repository table or in trac.ini
             self.default = True
             return row[0]
@@ -122,11 +122,11 @@ class MercurialChangesetAdmin(Component):
             # If the repository is not controlled by Trac
             # We exit with successful execution. This way we can make a generic 
             # Mercurial hook that will work with all repositories in the machine
-            if not row:
+            if row[0] is None:
                 printout("[E] Path",repository,"was not found in repository table, neither in Trac's config. Sync will not be executed")
                 sys.exit(0)
 
-        # Otherwise it should be the name of the repository
+        # Otherwise repository is the name of the repository or an alias
         else:
             sql_string = """
                 SELECT id
@@ -136,16 +136,16 @@ class MercurialChangesetAdmin(Component):
             self.cursor.execute(sql_string, (repository,))
             row = self.cursor.fetchone()
         
-            if not row:
+            if row[0] is None:
                 printout("[E] Sorry, repository name not found")
                 sys.exit(1)
         
         return row[0]
     
-    def get_mercurial_repository(self, repository_id):
+    def get_mercurial_repository(self):
         """
-        Returns a Mercurial repository API object pointing at the repository
-        given by the trac-admin parameter. 
+        Returns a Mercurial repository API object pointing at the repository directory
+        associated to self.repository_id
         """
         try:
             repository_dir = None
@@ -160,11 +160,38 @@ class MercurialChangesetAdmin(Component):
                      FROM repository
                      WHERE name = 'dir' AND id = %s
                 """
-                self.cursor.execute(sql_string, (repository_id,))
+                self.cursor.execute(sql_string, (self.repository_id,))
                 row = self.cursor.fetchone()
-                if not row:
-                    printout("[E] Sorry, but repository name is not defined in repository table")
-                    sys.exit(1)
+
+                if row[0] is None:
+                    # It could be an alias
+                    # We get the id of the repository it points to if it's an alias
+                    # We are not supporting recursive alias (they are unnecessary) 
+                    sql_string = """
+                        SELECT id
+                         FROM repository
+                         WHERE name = 'name' AND value = (SELECT value FROM repository WHERE name = 'alias' AND id = %s)
+                    """
+                    self.cursor.execute(sql_string, (self.repository_id,))
+                    row = self.cursor.fetchone()
+
+                    if row[0] is None:
+                        printout("[E] Sorry, but repository name is not defined in repository table")
+                        sys.exit(1)
+                    else:
+                        # We need to update the id, to sync the repository the alias is pointing
+                        self.repository_id = row[0]
+                        sql_string = """
+                            SELECT value
+                             FROM repository
+                             WHERE name = 'dir' AND id = %s
+                        """
+                        self.cursor.execute(sql_string, (self.repository_id,))
+                        row = self.cursor.fetchone()
+
+                        if row[0] is None:
+                            printout("[E] Sorry, but alias directory was not found, this plugin does not support recursive alias")
+                            sys.exit(1)
 
                 repository_dir = row[0]
 
@@ -182,12 +209,12 @@ class MercurialChangesetAdmin(Component):
         call this method before performing any action on the repository.
         """
         self.repository_id = self.get_repository_id(repository)
-        self.repository = self.get_mercurial_repository(self.repository_id) 
+        self.repository = self.get_mercurial_repository() 
 
     def _get_ctx_from_repo(self, node):
         """
-        Recives binary bin(rev_hash) or node.
-        Return list changeset data for commit in sql table
+        Receives binary bin(rev_hash) or node.
+        Returns a list containing changeset's data
         """
         # Let's get its change context object from the repository
         ctx = self.repository.changectx(node)
@@ -250,7 +277,8 @@ class MercurialChangesetAdmin(Component):
     def sync_repository(self, repository):
         """
         Synchronize the whole Mercurial repository changelog into Trac's DB
-        revision table. 
+        revision table. It finds out what revisions need to be synced and
+        inserts them int Trac's revision table.
         """
         self.initialize_repository(repository)
         
