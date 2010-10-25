@@ -237,10 +237,7 @@ class MercurialChangesetAdmin(Component):
 
         # If revision is not already in Trac's revision table, insert it
         if not(self.check_revision(rev_hash)):
-            #self.log.debug("Inserting revision %s" % rev_hash)
             self.insert_revision(*(self._get_ctx_from_repo(node)))
-        #else:
-            #self.log.debug("Revision %s already present in Trac" % rev_hash)
 
     def sync_last_revision(self, repository):
         """
