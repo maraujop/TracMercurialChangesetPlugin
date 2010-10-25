@@ -22,7 +22,7 @@ extra = {}
 
 setup(
     name = 'TracMercurialChangesetPlugin',
-    version = "0.3",
+    version = "0.4",
     description = "Insert Mercurial's changesets into Trac's DB revision table",
     author = "Miguel Araujo Perez, J. Javier Maestro de la Calle",
     author_email = "miguel.araujo.perez@gmail.com",

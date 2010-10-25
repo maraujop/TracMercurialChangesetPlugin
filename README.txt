@@ -17,7 +17,7 @@
 #  GNU GPL v3: http://www.gnu.org/copyleft/gpl-3.0.html
 
 ++++++++++++++++++++++++++++
-MercurialChangesetPlugin 0.3
+MercurialChangesetPlugin 0.4
 ++++++++++++++++++++++++++++
 
 +++++++++++++++++++++
