@@ -11,76 +11,54 @@ Trac plugin that inserts Mercurial repository information into Trac's database, 
 
 You can install this software as a normal Trac plugin.
 
-1. First uninstall former MercurialChangesetPlugin version, if you have installed it before.
-2. Change directory to Trac's plugin's directory containing ``setup.py``.
-3. Clone this repository:
+- First uninstall former MercurialChangesetPlugin version, if you have installed it before.
+- Change directory to Trac's plugin's directory containing ``setup.py``.
+- Clone this repository:
 
-<code>
-git clone git://github.com/maraujop/TracMercurialChangesetPlugin.git
-</code>
+    git clone git://github.com/maraujop/TracMercurialChangesetPlugin.git
 
-4. Install it:
+- Install it:
 
-<code>
-python setup.py install
-</code>
+    python setup.py install
 
-5. If you want to install this plugin to your trac instance only, create the egg from the repo running:
+- If you want to install this plugin to your trac instance only, create the egg from the repo running:
 
-<code>
-python setup.py bdist_egg
-</code>
+    python setup.py bdist_egg
 
 Then, copy the generated egg file to the trac instance's plugin directory:
 
-<code>
-cp dist/*.egg /srv/trac/env/plugins
-</code>
+    cp dist/*.egg /srv/trac/env/plugins
 
 ## Setup
 
-1. Enable plugin in config trac.ini:
+Enable plugin in config trac.ini:
 
-<code>
-[components]
-mercurialchangeset.* = enabled
-</code>
+    [components]
+    mercurialchangeset.* = enabled
 
-2. Then sync your repository into Trac by running:
+Then sync your repository into Trac by running:
 
-</code>
-trac-admin /srv/trac/env/ mercurial sync repository_name
-</code>
+    trac-admin /srv/trac/env/ mercurial sync repository_name
 
-``repository_name`` can be default or a repository defined in Trac's repository table
+* ``repository_name`` can be default or a repository defined in Trac's repository table
 
-3. Now you can keep your repository permanently synchronized in Trac by configuring a post-commit hook. If you are not familiar with Mercurial hooks, you can read <a href="http://www.selenic.com/mercurial/hgrc.5.html#hooks">official docs</a> about them.
+Now you can keep your repository permanently synchronized in Trac by configuring a post-commit hook. If you are not familiar with Mercurial hooks, you can read <a href="http://www.selenic.com/mercurial/hgrc.5.html#hooks">official docs</a> about them. In the server running Trac and the Mercurial repository, you should add the following to the hooks section of your global or personal hgrc:
 
-In the server running Trac and the Mercurial repository, you should add the following to the hooks section of your global or personal hgrc:
-
-<code>
-[hooks]
-changegroup.TracMercurialChangeset = /path/to/hook_script.sh
-</code>
+    [hooks]
+    changegroup.TracMercurialChangeset = /path/to/hook_script.sh
 	
-Your hook_script.sh should at least have something like this (example uses ``default`` repository):
+Your ``hook_script.sh`` should at least have something like this (example uses ``default`` repository):
 
-<code>
-trac-admin /srv/trac/env/ mercurial afterRevision $HG_NODE `pwd`
-</code>
+    trac-admin /srv/trac/env/ mercurial afterRevision $HG_NODE `pwd`
 
 If you rather have a commit hook, you can set it like this:
 
-<code>
-[hooks]
-commit.TracMercurialChangeset = /path/to/hook_script.sh
-</code>
+    [hooks]
+    commit.TracMercurialChangeset = /path/to/hook_script.sh
 
 Your ``hook_script.sh`` should then look like this:
 
-<code>
-trac-admin /srv/trac/env/ mercurial revision $HG_NODE `pwd`
-</code>
+    trac-admin /srv/trac/env/ mercurial revision $HG_NODE `pwd`
 
 This will keep synced with Trac every Mercurial's repository that you have configured within Trac. Thanks to the way the path is checked, if the repository is NOT controlled by Trac, it will let you commit or push withouth failing. This way you can keep all your Trac's repositories synced with only one hook_script.
 
@@ -130,7 +108,7 @@ trac-admin /srv/trac/env/ mercurial syncAll
 
 ## Troubleshooting
 
-1. If the hook is giving you an ``Error: Command not found`` that's because you don't have the right privileges. The user or role that executes the script should have read and write privileges in you Trac ENV. If this is not the case, you can fix it running trac-admin inside the hook script as sudo:
+* If the hook is giving you an ``Error: Command not found`` that's because you don't have the right privileges. The user or role that executes the script should have read and write privileges in you Trac ENV. If this is not the case, you can fix it running trac-admin inside the hook script as sudo:
 
 <code>
 echo "yourpassword" | sudo -S trac-admin /srv/trac/env/ mercurial afterRevision $HG_NODE default
@@ -138,7 +116,7 @@ echo "yourpassword" | sudo -S trac-admin /srv/trac/env/ mercurial afterRevision 
 
 Of course this is neither an elegant fix, nor a very secure, but it certainly is a very easy one :) 
 
-2. You can report bugs you find at the Project's Github, filling an issue. Please activate logging in Trac, so you can send as much information as possible. Please paste the traceback you will find at ``log/trac.log`` within your issue. This way it will be easier to fix any error. 
+* You can report bugs you find at the Project's Github, filling an issue. Please activate logging in Trac, so you can send as much information as possible. Please paste the traceback you will find at ``log/trac.log`` within your issue. This way it will be easier to fix any error. 
 
 ## Contributors
 
