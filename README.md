@@ -31,7 +31,7 @@ Then, copy the generated egg file to the trac instance's plugin directory:
 
 ## Setup
 
-Enable plugin in config trac.ini:
+Enable plugin in config ``trac.ini``:
 
     [components]
     mercurialchangeset.* = enabled
@@ -68,39 +68,27 @@ This plugin adds five trac-admin commands that will let you synchronize your Mer
 
 You can access the help for each command by doing:
 
-<code>
-trac-admin /srv/trac/env/ help mercurial <command> (e.g. lastRevision)
-</code>
+    trac-admin /srv/trac/env/ help mercurial <command> (e.g. lastRevision)
 
 * **lastRevision**: Synchronize the last changeset in Mercurial repository into Trac's DB revision table. 
     
-<code>
-trac-admin /srv/trac/env/ mercurial lastRevision <repository>
-</code>
+        trac-admin /srv/trac/env/ mercurial lastRevision <repository>
 
 * **sync**: Synchronize the whole Mercurial repository changelog into Trac's DB revision table. 
 
-<code>
-trac-admin /srv/trac/env/ mercurial sync <repository>
-</code>
+        trac-admin /srv/trac/env/ mercurial sync <repository>
 
 * **afterRevision**: Synchronize all changesets in Mercurial repository greater than the given revision into Trac's DB revision table.
     
-<code>
-trac-admin /srv/trac/env/ mercurial afterRevision <revision> <repository>
-</code>
+        trac-admin /srv/trac/env/ mercurial afterRevision <revision> <repository>
 
 * **revision**: Synchronize the given revision from Mercurial's repository into Trac's DB revision table.
     
-<code>
-trac-admin /srv/trac/env/ mercurial revision <revision> <repository>
-</code>
+        trac-admin /srv/trac/env/ mercurial revision <revision> <repository>
 
 * **syncAll**: Synchronize all hg repositories under Trac's control into Trac's DB revision table.
 
-<code>
-trac-admin /srv/trac/env/ mercurial syncAll
-</code>
+        trac-admin /srv/trac/env/ mercurial syncAll
 
 * ``<revision>`` can be a revision number or a revision hash
 * ``<repository>`` can be a repository name within Trac or the path to the root of the repository controlled by Trac
@@ -110,9 +98,7 @@ trac-admin /srv/trac/env/ mercurial syncAll
 
 * If the hook is giving you an ``Error: Command not found`` that's because you don't have the right privileges. The user or role that executes the script should have read and write privileges in you Trac ENV. If this is not the case, you can fix it running trac-admin inside the hook script as sudo:
 
-<code>
-echo "yourpassword" | sudo -S trac-admin /srv/trac/env/ mercurial afterRevision $HG_NODE default
-</code>
+        echo "yourpassword" | sudo -S trac-admin /srv/trac/env/ mercurial afterRevision $HG_NODE default
 
 Of course this is neither an elegant fix, nor a very secure, but it certainly is a very easy one :) 
 
