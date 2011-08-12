@@ -11,23 +11,23 @@ Trac plugin that inserts Mercurial repository information into Trac's database, 
 
 You can install this software as a normal Trac plugin.
 
-- First uninstall former MercurialChangesetPlugin version, if you have installed it before.
-- Change directory to Trac's plugin's directory containing ``setup.py``.
-- Clone this repository:
+1. First uninstall former MercurialChangesetPlugin version, if you have installed it before.
+2. Change directory to Trac's plugin's directory containing ``setup.py``.
+3. Clone this repository:
 
-    git clone git://github.com/maraujop/TracMercurialChangesetPlugin.git
+        git clone git://github.com/maraujop/TracMercurialChangesetPlugin.git
 
-- Install it:
+4. Install it:
 
-    python setup.py install
+        python setup.py install
 
-- If you want to install this plugin to your trac instance only, create the egg from the repo running:
+5. If you want to install this plugin to your trac instance only, create the egg from the repo running:
 
-    python setup.py bdist_egg
+        python setup.py bdist_egg
 
 Then, copy the generated egg file to the trac instance's plugin directory:
 
-    cp dist/*.egg /srv/trac/env/plugins
+        cp dist/*.egg /srv/trac/env/plugins
 
 ## Setup
 
